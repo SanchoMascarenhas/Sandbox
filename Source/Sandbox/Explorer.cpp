@@ -5,7 +5,7 @@
 #include "PaperFlipbookComponent.h"
 #include "PaperFlipbook.h"
 
-enum Actions { IDLE, WALK, JUMP, CROUCH, FALLING};
+enum Actions { IDLE, WALK, JUMP, CROUCH, FALLING, POWERDROP};
 
 AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -82,6 +82,7 @@ void AExplorer::BeginPlay()
 
 void AExplorer::Tick(float DeltaSeconds)
 {
+	
 	Super::Tick(DeltaSeconds);
 	UpdateAnimation();
 }
@@ -117,8 +118,8 @@ void AExplorer::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AExplorer::Jump);
 	InputComponent->BindAction("Jump", IE_Repeat, this, &AExplorer::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &AExplorer::StopJumping);
-	//InputComponent->BindAction("Crouch", IE_Pressed, this, &AExplorer::Crouching);
-	//InputComponent->BindAction("Crouch", IE_Released, this, &AExplorer::StopCrouching);
+	InputComponent->BindAction("Crouch/PowerDrop", IE_Pressed, this, &AExplorer::Crouching);
+	InputComponent->BindAction("Crouch/PowerDrop", IE_Released, this, &AExplorer::StopCrouching);
 	InputComponent->BindAxis("HorizontalMovement", this, &AExplorer::Movement);
 }
 
@@ -137,6 +138,9 @@ void AExplorer::UpdateAnimation()
 	case CROUCH:
 		this->GetSprite()->SetFlipbook(CrouchAnimation);
 		break;
+	case POWERDROP:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+		break;
 	}
 
 	GetSprite()->SetRelativeRotation(spriteRotation);
@@ -145,15 +149,28 @@ void AExplorer::UpdateAnimation()
 
 void AExplorer::Crouching()
 {
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Blocking Hit =: %s"), this->GetCharacterMovement()->IsFalling()));
+
+	if (this->GetCharacterMovement()->IsFalling()) {
+		ANIMATION = POWERDROP;
+	}
+	/** /
 	isCrouching = true;
 	this->Crouch();
 	//this->SetActorRelativeLocation(FVector(0.0f, 0.0f, 48.015724f));
+	/**/
 }
 
 void AExplorer::StopCrouching()
 {
+	if (isJumping) {
+		ANIMATION = JUMP;
+	}
+	/** /
 	isCrouching = false;
 	this->UnCrouch();
+	/**/
 }
 
 void AExplorer::Jump() {
@@ -165,6 +182,5 @@ void AExplorer::Jump() {
 void AExplorer::StopJumping() {
 	Super::StopJumping();
 	isJumping = false;
-	
 }
 

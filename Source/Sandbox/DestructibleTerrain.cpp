@@ -24,10 +24,47 @@ ADestructibleTerrain::ADestructibleTerrain(const class FObjectInitializer& Objec
 
 void ADestructibleTerrain::BeginPlay()
 {
+	GetSprite()->SetFlipbook(NormalStateSprite);
+	InitialHP = Health;
 }
 
 void ADestructibleTerrain::Tick(float DeltaSeconds)
 {
-	GetSprite()->SetFlipbook(NormalStateSprite);
+}
+
+float ADestructibleTerrain::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
+{
+	if (Health <= 0.f)
+	{
+		return 0.f;
+	}
+
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
+	if (ActualDamage > 0.f)
+	{
+		Health -= ActualDamage;
+
+		if (Health <= 0)
+		{
+			Die(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
+			return ActualDamage;
+		}
+
+	}
+
+	updateSprite();
+	return ActualDamage;
+}
+
+void ADestructibleTerrain::Die(float KillingDamage, FDamageEvent const & DamageEvent, AController * Killer, AActor * DamageCauser)
+{
+}
+
+void ADestructibleTerrain::updateSprite()
+{
+	if (Health < InitialHP * 0.5f) {
+		GetSprite()->SetSpriteColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+	}
 }
 

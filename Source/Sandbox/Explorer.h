@@ -68,6 +68,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 		class UPaperFlipbook* CrouchAnimation;
 
+
+
 public:
 	int ANIMATION;
 	FQuat spriteRotation;
