@@ -108,10 +108,14 @@ void AExplorer::Movement(float Value)
 		return;
 	}
 	if (this->GetCharacterMovement()->IsFalling()) {
-		ANIMATION = JUMP;
+		if (isCrouching)
+			ANIMATION = POWERDROP;
+		else
+			ANIMATION = JUMP;
 	}
 	
 }
+
 
 void AExplorer::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
@@ -125,17 +129,22 @@ void AExplorer::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 
 void AExplorer::UpdateAnimation()
 {
+
 	switch (ANIMATION) {
 	case JUMP:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(JumpAnimation);
 		break;
 	case IDLE:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(IdleAnimation);
 		break;
 	case WALK:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(WalkingAnimation);
 		break; 
 	case CROUCH:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(CrouchAnimation);
 		break;
 	case POWERDROP:
@@ -150,12 +159,12 @@ void AExplorer::UpdateAnimation()
 void AExplorer::Crouching()
 {
 	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Blocking Hit =: %s"), this->GetCharacterMovement()->IsFalling()));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, this->GetCharacterMovement()->IsFalling() ? "TRUE" : "FALSE");
+	
+	if (this->GetCharacterMovement()->IsFalling())
+		PerformPowerDrop();
 
-	if (this->GetCharacterMovement()->IsFalling()) {
-		ANIMATION = POWERDROP;
-	}
-	/** /
+	/**/
 	isCrouching = true;
 	this->Crouch();
 	//this->SetActorRelativeLocation(FVector(0.0f, 0.0f, 48.015724f));
@@ -167,7 +176,7 @@ void AExplorer::StopCrouching()
 	if (isJumping) {
 		ANIMATION = JUMP;
 	}
-	/** /
+	/**/
 	isCrouching = false;
 	this->UnCrouch();
 	/**/
@@ -182,5 +191,24 @@ void AExplorer::Jump() {
 void AExplorer::StopJumping() {
 	Super::StopJumping();
 	isJumping = false;
+}
+
+
+void AExplorer::PerformPowerDrop()
+{
+
+	TArray<AActor*> Overlaps;
+	this->GetCapsuleComponent()->GetOverlappingActors(Overlaps, APaperCharacter::StaticClass());
+	for (int32 i = 0; i < Overlaps.Num(); i++)
+	{
+		if (Overlaps[i] && Overlaps[i] != this)
+		{
+			FPointDamageEvent DmgEvent;
+			DmgEvent.Damage = PowerDropDamage;
+
+			Overlaps[i]->TakeDamage(DmgEvent.Damage, DmgEvent, GetController(), this);
+		}
+	}
+
 }
 

@@ -15,7 +15,7 @@ ADestructibleTerrain::ADestructibleTerrain(const class FObjectInitializer& Objec
 	/**/
 
 	if (!RootComponent) {
-		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("ExplorerBase"));
+		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("TerrainBase"));
 	}
 
 	// Set the size of our collision capsule.
