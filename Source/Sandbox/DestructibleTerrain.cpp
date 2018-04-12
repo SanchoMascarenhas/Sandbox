@@ -3,33 +3,40 @@
 #include "DestructibleTerrain.h"
 #include "PaperFlipbookComponent.h"
 #include "PaperFlipbook.h"
+#include "Components/BoxComponent.h"
 
 
-ADestructibleTerrain::ADestructibleTerrain(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+// Sets default values
+ADestructibleTerrain::ADestructibleTerrain()
 {
-	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	/**/
-
-	/**/
 
 	if (!RootComponent) {
 		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("TerrainBase"));
 	}
 
-	// Set the size of our collision capsule.
-	//GetCapsuleComponent()->bGenerateOverlapEvents = true;
+	activeFlipbook = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("ActiveFlipbook"));
+	activeFlipbook->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	collisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
+	collisionBox->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
 }
 
+// Called when the game starts or when spawned
 void ADestructibleTerrain::BeginPlay()
 {
-	GetSprite()->SetFlipbook(NormalStateSprite);
+	Super::BeginPlay();
 	InitialHP = Health;
+	activeFlipbook->SetFlipbook(NormalStateSprite);
 }
 
-void ADestructibleTerrain::Tick(float DeltaSeconds)
+// Called every frame
+void ADestructibleTerrain::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
+
 }
 
 float ADestructibleTerrain::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
@@ -47,7 +54,9 @@ float ADestructibleTerrain::TakeDamage(float Damage, FDamageEvent const & Damage
 
 		if (Health <= 0)
 		{
-			Die(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "health < 0");
+			Destroy();
 			return ActualDamage;
 		}
 
@@ -57,14 +66,10 @@ float ADestructibleTerrain::TakeDamage(float Damage, FDamageEvent const & Damage
 	return ActualDamage;
 }
 
-void ADestructibleTerrain::Die(float KillingDamage, FDamageEvent const & DamageEvent, AController * Killer, AActor * DamageCauser)
-{
-}
-
 void ADestructibleTerrain::updateSprite()
 {
-	if (Health < InitialHP * 0.5f) {
-		GetSprite()->SetSpriteColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+	if (Health <= InitialHP * 0.5f) {
+		activeFlipbook->SetFlipbook(CrackedStateSprite);
 	}
 }
 
