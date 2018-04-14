@@ -4,8 +4,9 @@
 #include "Engine.h"
 #include "PaperFlipbookComponent.h"
 #include "PaperFlipbook.h"
+#include "DestructibleTerrain.h"
 
-enum Actions { IDLE, WALK, JUMP, CROUCH, FALLING};
+enum Actions { IDLE, WALK, JUMP, CROUCH, FALLING, POWERDROP};
 
 AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -54,6 +55,7 @@ AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 	GetCapsuleComponent()->bGenerateOverlapEvents = true;
 	GetCapsuleComponent()->SetCapsuleHalfHeight(48.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(27.0f);
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AExplorer::OnHit);
 
 	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
 	GetCharacterMovement()->GravityScale = 2.5f;
@@ -72,7 +74,8 @@ AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 	ANIMATION = IDLE;
-	isJumping = isCrouching = false;
+	isJumping = isCrouching = isPowerDroping = false;
+	PowerDropDamage = 25.0f;
 }
 
 void AExplorer::BeginPlay()
@@ -82,6 +85,7 @@ void AExplorer::BeginPlay()
 
 void AExplorer::Tick(float DeltaSeconds)
 {
+	
 	Super::Tick(DeltaSeconds);
 	UpdateAnimation();
 }
@@ -107,35 +111,47 @@ void AExplorer::Movement(float Value)
 		return;
 	}
 	if (this->GetCharacterMovement()->IsFalling()) {
-		ANIMATION = JUMP;
+		if (isPowerDroping)
+			ANIMATION = POWERDROP;
+		else
+			ANIMATION = JUMP;
 	}
 	
 }
+
 
 void AExplorer::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AExplorer::Jump);
 	InputComponent->BindAction("Jump", IE_Repeat, this, &AExplorer::Jump);
 	InputComponent->BindAction("Jump", IE_Released, this, &AExplorer::StopJumping);
-	//InputComponent->BindAction("Crouch", IE_Pressed, this, &AExplorer::Crouching);
-	//InputComponent->BindAction("Crouch", IE_Released, this, &AExplorer::StopCrouching);
+	InputComponent->BindAction("Crouch/PowerDrop", IE_Pressed, this, &AExplorer::Crouching);
+	InputComponent->BindAction("Crouch/PowerDrop", IE_Released, this, &AExplorer::StopCrouching);
 	InputComponent->BindAxis("HorizontalMovement", this, &AExplorer::Movement);
 }
 
 void AExplorer::UpdateAnimation()
 {
+
 	switch (ANIMATION) {
 	case JUMP:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(JumpAnimation);
 		break;
 	case IDLE:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(IdleAnimation);
 		break;
 	case WALK:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(WalkingAnimation);
 		break; 
 	case CROUCH:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(CrouchAnimation);
+		break;
+	case POWERDROP:
+		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
 		break;
 	}
 
@@ -144,16 +160,27 @@ void AExplorer::UpdateAnimation()
 }
 
 void AExplorer::Crouching()
-{
-	isCrouching = true;
-	this->Crouch();
-	//this->SetActorRelativeLocation(FVector(0.0f, 0.0f, 48.015724f));
+{	
+	if (this->GetCharacterMovement()->IsFalling()) {
+		//PerformPowerDrop();
+		isPowerDroping = true;
+	}
+	else {
+		isCrouching = true;
+		this->Crouch();
+	}
 }
 
 void AExplorer::StopCrouching()
 {
+	if (isJumping) {
+		ANIMATION = JUMP;
+	}
+	/**/
 	isCrouching = false;
+	isPowerDroping = false;
 	this->UnCrouch();
+	/**/
 }
 
 void AExplorer::Jump() {
@@ -165,6 +192,42 @@ void AExplorer::Jump() {
 void AExplorer::StopJumping() {
 	Super::StopJumping();
 	isJumping = false;
-	
+}
+
+
+void AExplorer::PerformPowerDrop()
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "Powerdrop");
+
+	TArray<AActor*> Overlaps;
+	this->GetCapsuleComponent()->GetOverlappingActors(Overlaps, AActor::StaticClass());
+	for (int32 i = 0; i < Overlaps.Num(); i++)
+	{
+		if (Overlaps[i] && Overlaps[i] != this)
+		{
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, Overlaps[i]->GetActorLabel());
+			FPointDamageEvent DmgEvent;
+			DmgEvent.Damage = PowerDropDamage;
+
+			Overlaps[i]->TakeDamage(DmgEvent.Damage, DmgEvent, GetController(), this);
+		}
+	}
+
+}
+
+void AExplorer::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "hit");
+	ADestructibleTerrain* land = Cast<ADestructibleTerrain>(OtherActor);
+	if(isPowerDroping)
+		if (land) {
+			FPointDamageEvent DmgEvent;
+			DmgEvent.Damage = PowerDropDamage;
+
+			land->TakeDamage(DmgEvent.Damage, DmgEvent, GetController(), this);
+		}
 }
 

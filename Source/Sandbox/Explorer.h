@@ -68,9 +68,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 		class UPaperFlipbook* CrouchAnimation;
 
+	UFUNCTION(Category = "PowerDrop")
+		void PerformPowerDrop();
+
+	UFUNCTION()
+		void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+
+	UPROPERTY(EditDefaultsOnly, Category = "PowerDrop")
+		float PowerDropDamage;
+
 public:
 	int ANIMATION;
 	FQuat spriteRotation;
 	bool isJumping;	
 	bool isCrouching;
+	bool isPowerDroping;
 };
