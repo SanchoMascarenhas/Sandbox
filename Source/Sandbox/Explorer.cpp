@@ -23,6 +23,7 @@ AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> JumpAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> FallingAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> CrouchAnimationAsset;
+		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> PowerdropAnimationAsset;
 		FConstructorStatics() :
 			WalkingAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Walk")),
 			IdleAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Idle")),
@@ -30,7 +31,8 @@ AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 			SmashAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Smash")),
 			JumpAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Jump")),
 			FallingAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Falling")),
-			CrouchAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Crouch"))
+			CrouchAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Crouch")),
+			PowerdropAnimationAsset(TEXT("/Game/Sprite/Player/Flipbooks/Powerdrop"))
 		{
 		}
 	};
@@ -43,6 +45,7 @@ AExplorer::AExplorer(const class FObjectInitializer& ObjectInitializer)
 	JumpAnimation = ConstructorStatics.JumpAnimationAsset.Get();
 	FallingAnimation = ConstructorStatics.FallingAnimationAsset.Get();
 	CrouchAnimation = ConstructorStatics.CrouchAnimationAsset.Get();
+	PowerdropAnimation = ConstructorStatics.PowerdropAnimationAsset.Get();
 
 
 	GetSprite()->SetFlipbook(IdleAnimation);
@@ -135,23 +138,19 @@ void AExplorer::UpdateAnimation()
 
 	switch (ANIMATION) {
 	case JUMP:
-		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(JumpAnimation);
 		break;
 	case IDLE:
-		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(IdleAnimation);
 		break;
 	case WALK:
-		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(WalkingAnimation);
 		break; 
 	case CROUCH:
-		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		this->GetSprite()->SetFlipbook(CrouchAnimation);
 		break;
 	case POWERDROP:
-		this->GetSprite()->SetSpriteColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+		this->GetSprite()->SetFlipbook(PowerdropAnimation);;
 		break;
 	}
 
@@ -197,8 +196,9 @@ void AExplorer::StopJumping() {
 
 void AExplorer::PerformPowerDrop()
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "Powerdrop");
+
+	//if (GEngine)
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, "Powerdrop");
 
 	TArray<AActor*> Overlaps;
 	this->GetCapsuleComponent()->GetOverlappingActors(Overlaps, AActor::StaticClass());

@@ -66,6 +66,9 @@ protected:
 		class UPaperFlipbook* FallingAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+		class UPaperFlipbook* PowerdropAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 		class UPaperFlipbook* CrouchAnimation;
 
 	UFUNCTION(Category = "PowerDrop")
